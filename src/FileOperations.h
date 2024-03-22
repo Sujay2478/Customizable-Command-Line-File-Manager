@@ -13,4 +13,9 @@ void listDirectory(const std::string& dirName);
 
 void searchFiles(const std::string& dirName, const std::string& searchQuery);
 
+void copyFile(const std::string& source, const std::string& destination);
+void copyDirectory(const std::string& source, const std::string& destination);
+
+void displayProperties(const std::string& path);
+
 #endif

@@ -1,6 +1,8 @@
 #include "FileOperations.h"
 #include <fstream>
 #include <iostream>
+#include <chrono>
+#include <iomanip>
 
 #if __cplusplus >= 201703L
 #include <filesystem>
@@ -15,10 +17,14 @@ void createDirectory(const std::string& dirName) {
 }
 
 void deleteDirectory(const std::string& dirName) {
-    if (fs::remove_all(dirName)) {
-        std::cout << "Directory deleted: " << dirName << std::endl;
-    } else {
-        std::cerr << "Error deleting directory: " << dirName << std::endl;
+    try {
+        if (fs::remove_all(dirName) > 0) {
+            std::cout << "Directory deleted: " << dirName << std::endl;
+        } else {
+            std::cerr << "Error: Directory is not empty or does not exist: " << dirName << std::endl;
+        }
+    } catch (const fs::filesystem_error& e) {
+        std::cerr << "Filesystem error: " << e.what() << std::endl;
     }
 }
 
@@ -66,6 +72,44 @@ void searchFiles(const std::string& dirName, const std::string& searchQuery) {
         }
     } else {
         std::cerr << "Error: Directory does not exist or is not a directory: " << dirName << std::endl;
+    }
+}
+
+void copyFile(const std::string& source, const std::string& destination) {
+    try {
+        fs::copy_file(source, destination, fs::copy_options::overwrite_existing);
+        std::cout << "File copied from " << source << " to " << destination << std::endl;
+    } catch (const fs::filesystem_error& e) {
+        std::cerr << e.what() << std::endl;
+    }
+}
+
+void copyDirectory(const std::string& source, const std::string& destination) {
+    try {
+        fs::copy(source, destination, fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+        std::cout << "Directory copied from " << source << " to " << destination << std::endl;
+    } catch (const fs::filesystem_error& e) {
+        std::cerr << e.what() << std::endl;
+    }
+}
+
+void displayProperties(const std::string& path) {
+    try {
+        fs::path p(path);
+        if (fs::exists(p)) {
+            auto ftime = fs::last_write_time(p);
+            auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+                ftime - fs::file_time_type::clock::now() + std::chrono::system_clock::now()
+            );
+            std::time_t cftime = std::chrono::system_clock::to_time_t(sctp);
+            std::cout << "File path: " << p << std::endl;
+            std::cout << "File size: " << fs::file_size(p) << " bytes" << std::endl;
+            std::cout << "Last write time: " << std::put_time(std::localtime(&cftime), "%F %T") << std::endl;
+        } else {
+            std::cerr << "Error: Path does not exist: " << p << std::endl;
+        }
+    } catch (const fs::filesystem_error& e) {
+        std::cerr << e.what() << std::endl;
     }
 }
 
